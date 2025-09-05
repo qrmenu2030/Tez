@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Menu - TezTayor</title>
+  <link rel="stylesheet" href="CSS/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Меню TezTayor</h1>
+  </header>
+
+  <main>
+    <section class="menu" id="menuList"></section>
+
+    <div class="cart">
+      <h2>Корзина</h2>
+      <ul id="cartList"></ul>
+      <div class="cart-summary">
+        <span id="cartTotal">Итого: 0 сом</span>
+        <button id="checkoutBtn">Оформить заказ</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Модалка заказа -->
+  <div class="modal" id="orderModal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>Оформление заказа</h2>
+      <form id="orderForm">
+        <input type="text" id="customerName" placeholder="Ваше имя" required>
+        <input type="tel" id="customerPhone" placeholder="Телефон (9 цифр)" required>
+        <input type="text" id="customerAddress" placeholder="Адрес (если доставка)">
+        <label><input type="radio" name="delivery" value="pickup" checked> Самовывоз</label>
+        <label><input type="radio" name="delivery" value="delivery"> Доставка</label>
+        <button type="submit">Подтвердить заказ</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="JS/script.js"></script>
+</body>
+</html>
