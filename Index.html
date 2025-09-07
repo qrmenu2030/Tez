@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🌭 FastFood — Меню</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --accent:#FF6B00;
+      --muted:#888;
+      --bg:#f6f7f8;
+      --card:#ffffff;
+      --radius:12px;
+      --glass: rgba(255,255,255,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);font-family:Montserrat, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    .wrap{max-width:1100px;margin:18px auto;padding:14px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{font-family:Pacifico, cursive;font-size:34px;color:var(--accent);letter-spacing:1px}
+    nav{display:flex;gap:12px}
+    nav button{background:transparent;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    nav button:focus{outline:none}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 6px 18px rgba(20,20,30,0.06);}
+
+    .menu{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .menu-card{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff, #fbfbfb);transform:translateZ(0);transition:transform .18s ease, box-shadow .18s ease}
+    .menu-card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(14,14,20,0.06)}
+    .menu-card img{width:72px;height:72px;object-fit:cover;border-radius:10px}
+    .menu-info{flex:1}
+    .menu-title{font-weight:700}
+    .menu-desc{font-size:13px;color:var(--muted)}
+    .menu-row{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+    .price{font-weight:800}
+    .btn{background:var(--accent);border:none;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;transition:transform .12s ease}
+    .btn:active{transform:scale(.98)}
+    .btn:focus{outline:none}
+
+    /* Cart */
+    .cart-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding-right:6px}
+    .cart-item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:#fff;justify-content:space-between}
+    .cart-left{display:flex;gap:10px;align-items:center}
+    .thumb{width:48px;height:48px;border-radius:8px;object-fit:cover}
+    .qty-controls{display:flex;align-items:center;gap:8px}
+    .icon-btn{background:#eee;border:none;padding:6px;border-radius:6px;cursor:pointer}
+    .icon-btn:focus{outline:none}
+
+    form .row{margin-top:8px}
+    input[type=text], input[type=tel], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6e6}
+    input:focus, textarea:focus, select:focus{outline:none;box-shadow:0 0 0 3px rgba(255,107,0,0.08)}
+
+    .muted{color:var(--muted);font-size:13px}
+    .total{font-weight:800;margin-top:8px}
+    .actions{display:flex;gap:8px;margin-top:10px}
+    .btn.ghost{background:transparent;color:var(--muted);border:1px solid #eee}
+
+    /* toast */
+    .toast{position:fixed;right:16px;bottom:16px;background:#222;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(12px);transition:opacity .18s,transform .18s}
+    .toast.show{opacity:1;transform:none}
+
+    /* Responsive */
+    @media(max-width:1000px){.grid{grid-template-columns:1fr}.menu{grid-template-columns:repeat(1,1fr)}.cart-list{max-height:260px}}
+    @media(max-width:480px){.logo{font-size:24px}.menu-card img{width:60px;height:60px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">Fast&Nice</div>
+        <div class="muted">Вкусно и быстро</div>
+      </div>
+      <nav>
+        <button id="aboutBtn">О Нас</button>
+        <button id="contactsBtn">Контакты</button>
+      </nav>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Меню</h2>
+        <div id="menu" class="menu"></div>
+      </div>
+
+      <div class="card">
+        <h3>Корзина</h3>
+        <div id="cartList" class="cart-list"></div>
+
+        <div class="total">Итого: <span id="total">0</span> ₽</div>
+
+        <form id="orderForm">
+          <div class="row">
+            <label>Имя <span style="color:red">*</span></label>
+            <input id="name" type="text" placeholder="Только буквы" autocomplete="name" />
+          </div>
+          <div class="row">
+            <label>Телефон (+992) <span style="color:red">*</span></label>
+            <div style="display:flex;gap:8px">
+              <div style="padding:10px;background:#f2f2f2;border-radius:8px;display:flex;align-items:center">+992</div>
+              <input id="phone" type="tel" maxlength="9" placeholder="912345678" />
+            </div>
+            <div class="muted">Введите 9 цифр после кода +992</div>
+          </div>
+
+          <div class="row">
+            <label>Тип заказа</label>
+            <select id="deliveryType">
+              <option value="pickup">Самовывоз</option>
+              <option value="delivery">Доставка</option>
+            </select>
+          </div>
+
+          <div class="row" id="addressRow" style="display:none">
+            <label>Адрес доставки</label>
+            <input id="address" type="text" placeholder="Город, улица, дом" />
+          </div>
+
+          <div class="row">
+            <label>Способ оплаты</label>
+            <select id="paymentMethod">
+              <option value="cash">Наличными</option>
+              <option value="online">Онлайн перевод</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label>Комментарии</label>
+            <textarea id="note" rows="2" placeholder="Например: без лука"></textarea>
+          </div>
+
+          <div class="actions">
+            <button type="button" id="clearCartBtn" class="btn ghost">Очистить корзину</button>
+            <button type="button" id="confirmBtn" class="btn">Подтвердить заказ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    // Пример меню
+    const MENU = [
+      {id:'b1', title:'Бургер классический', desc:'Говяжья котлета, сыр, соус', price:250, img:'https://picsum.photos/seed/b1/300/300'},
+      {id:'b2', title:'Чизбургер', desc:'Сырный слой', price:290, img:'https://picsum.photos/seed/b2/300/300'},
+      {id:'f1', title:'Картофель фри', desc:'Хрустящая картошка', price:120, img:'https://picsum.photos/seed/f1/300/300'},
+      {id:'d1', title:'Кола 0.5л', desc:'Освежающий напиток', price:80, img:'https://picsum.photos/seed/d1/300/300'},
+      {id:'s1', title:'Салат Цезарь', desc:'Курица, сыр, соус', price:220, img:'https://picsum.photos/seed/s1/300/300'}
+    ];
+
+    // localStorage keys
+    const LS_CART = 'ff_cart_v1';
+    const LS_FORM = 'ff_form_v1';
+
+    // DOM
+    const menuEl = document.getElementById('menu');
+    const cartList = document.getElementById('cartList');
+    const totalEl = document.getElementById('total');
+    const nameEl = document.getElementById('name');
+    const phoneEl = document.getElementById('phone');
+    const addressEl = document.getElementById('address');
+    const deliveryTypeEl = document.getElementById('deliveryType');
+    const paymentEl = document.getElementById('paymentMethod');
+    const noteEl = document.getElementById('note');
+    const clearCartBtn = document.getElementById('clearCartBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const addressRow = document.getElementById('addressRow');
+    const toast = document.getElementById('toast');
+
+    let cart = loadCart();
+    let formState = loadForm();
+
+    function renderMenu(){
+      menuEl.innerHTML = '';
+      MENU.forEach(it=>{
+        const el = document.createElement('div');
+        el.className = 'menu-card';
+        el.innerHTML = `
+          <img src="${it.img}" alt="${it.title}" />
+          <div class="menu-info">
+            <div class="menu-title">${it.title}</div>
+            <div class="menu-desc">${it.desc}</div>
+          </div>
+          <div class="menu-row">
+            <div class="price">${it.price} ₽</div>
+            <button class="btn" data-id="${it.id}">Добавить</button>
+          </div>
+        `;
+        menuEl.appendChild(el);
+      });
+      // event delegation
+      menuEl.querySelectorAll('.btn').forEach(b=>b.addEventListener('click', ()=>{
+        const id = b.getAttribute('data-id'); addToCart(id);
+      }));
+    }
+
+    function loadCart(){
+      try{ return JSON.parse(localStorage.getItem(LS_CART)) || []; }catch(e){return []}
+    }
+    function saveCart(){ localStorage.setItem(LS_CART, JSON.stringify(cart)); }
+
+    function loadForm(){
+      try{ return JSON.parse(localStorage.getItem(LS_FORM)) || {}; }catch(e){return {}} }
+    function saveForm(){
+      const state = { name:nameEl.value, phone:phoneEl.value, deliveryType:deliveryTypeEl.value, address:addressEl.value, paymentMethod:paymentEl.value, note:noteEl.value };
+      localStorage.setItem(LS_FORM, JSON.stringify(state));
+    }
+
+    function renderCart(){
+      cartList.innerHTML = '';
+      if (cart.length === 0) {
+        cartList.innerHTML = '<div class="muted">Ваша корзина пуста</div>';
+      } else {
+        cart.forEach((c, idx)=>{
+          const item = document.createElement('div');
+          item.className = 'cart-item';
+          item.innerHTML = `
+            <div class="cart-left">
+              <img src="${c.img}" class="thumb" />
+              <div>
+                <div style="font-weight:700">${c.title}</div>
+                <div class="muted">${c.price} ₽</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="qty-controls">
+                <button class="icon-btn" data-idx="${idx}" data-op="minus">−</button>
+                <span>${c.qty}</span>
+                <button class="icon-btn" data-idx="${idx}" data-op="plus">+</button>
+              </div>
+              <div style="width:8px"></div>
+              <div style="font-weight:800">${c.price * c.qty} ₽</div>
+            </div>
+          `;
+          cartList.appendChild(item);
+        });
+        // attach qty handlers
+        cartList.querySelectorAll('.icon-btn').forEach(b=>{
+          b.addEventListener('click', ()=>{
+            const idx = +b.getAttribute('data-idx');
+            const op = b.getAttribute('data-op');
+            if (op === 'plus') changeQty(idx, 1); else changeQty(idx, -1);
+          });
+        });
+      }
+      updateTotal();
+      saveCart();
+      updateFormState();
+    }
+
+    function addToCart(id){
+      const product = MENU.find(m=>m.id===id);
+      if (!product) return;
+      const exist = cart.find(c=>c.id===id);
+      if (exist) exist.qty++; else cart.push({ id:product.id, title:product.title, price:product.price, qty:1, img:product.img });
+      renderCart();
+      showToast('Добавлено: ' + product.title);
+    }
+
+    function changeQty(index, delta){
+      if (!cart[index]) return;
+      cart[index].qty += delta;
+      if (cart[index].qty <= 0) cart.splice(index,1);
+      renderCart();
+    }
+
+    function updateTotal(){
+      const total = cart.reduce((s,i)=>s + i.price * i.qty, 0);
+      totalEl.textContent = total;
+    }
+
+    function clearCart(){
+      if (!confirm('Очистить корзину?')) return;
+      cart = [];
+      renderCart();
+    }
+
+    // Form handling & validation
+    function validateForm(){
+      const name = nameEl.value.trim();
+      const phone = phoneEl.value.trim();
+      if (!name.match(/^[А-Яа-яA-Za-z\s]+$/)) { showToast('Имя: только буквы', true); return false; }
+      if (!phone.match(/^\d{9}$/)) { showToast('Телефон: введите 9 цифр после +992', true); return false; }
+      if (deliveryTypeEl.value === 'delivery' && addressEl.value.trim().length < 4) { showToast('Укажите адрес доставки', true); return false; }
+      if (cart.length === 0) { showToast('Добавьте товары в корзину', true); return false; }
+      return true;
+    }
+
+    // Disabled fields when cart empty
+    function updateFormState(){
+      const disabled = cart.length === 0;
+      [nameEl, phoneEl, deliveryTypeEl, addressEl, paymentEl, noteEl, clearCartBtn, confirmBtn].forEach(el=> el.disabled = disabled);
+      if (disabled) {
+        nameEl.classList.add('muted');
+      } else nameEl.classList.remove('muted');
+    }
+
+    // Submit
+    function confirmOrder(){
+      if (!validateForm()) return;
+      const customer = {
+        name: nameEl.value.trim(),
+        phone: '+992' + phoneEl.value.trim(),
+        deliveryType: deliveryTypeEl.value,
+        address: addressEl.value.trim(),
+        paymentMethod: paymentEl.value,
+        note: noteEl.value.trim()
+      };
+      const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+      const order = { items: cart, total: total, customer: customer };
+      // сохранить в Google Sheets через GAS
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Отправка...';
+
+      google.script.run.withSuccessHandler(function(resp){
+        confirmBtn.disabled = false; confirmBtn.textContent = 'Подтвердить заказ';
+        if (resp && resp.success) {
+          showToast('Заказ сохранён (ID: ' + resp.orderId + ')');
+          showModal('Заказ оформлен','Спасибо! Ваш заказ принят. ID: ' + resp.orderId);
+          // очистка
+          cart = []; renderCart();
+          // очистить поля формы
+          nameEl.value = phoneEl.value = addressEl.value = noteEl.value = '';
+          saveCart(); saveForm();
+        } else {
+          showToast('Ошибка: ' + (resp && (resp.message || resp.raw) || 'неизвестно'), true);
+        }
+      }).withFailureHandler(function(err){
+        confirmBtn.disabled = false; confirmBtn.textContent = 'Подтвердить заказ';
+        showToast('Серверная ошибка: ' + err.message, true);
+      }).saveOrderToSheet(order);
+    }
+
+    // Toast
+    let toastTimer;
+    function showToast(text, isError){
+      toast.textContent = text; toast.classList.add('show'); toast.style.background = isError? '#b00020' : '#222';
+      clearTimeout(toastTimer); toastTimer = setTimeout(()=> toast.classList.remove('show'), 2800);
+    }
+
+    // Simple modal using window.alert for success (or make custom)
+    function showModal(title, text){
+      alert(title + '\n\n' + text);
+    }
+
+    // Events
+    clearCartBtn.addEventListener('click', clearCart);
+    confirmBtn.addEventListener('click', confirmOrder);
+    deliveryTypeEl.addEventListener('change', ()=>{
+      if (deliveryTypeEl.value === 'delivery') addressRow.style.display = 'block'; else addressRow.style.display = 'none';
+      saveForm();
+    });
+    [nameEl, phoneEl, addressEl, paymentEl, noteEl].forEach(i=> i.addEventListener('input', ()=>{ saveForm(); }));
+
+    // initial values from LS
+    if (formState) {
+      nameEl.value = formState.name || '';
+      phoneEl.value = formState.phone || '';
+      deliveryTypeEl.value = formState.deliveryType || 'pickup';
+      addressEl.value = formState.address || '';
+      paymentEl.value = formState.paymentMethod || 'cash';
+      noteEl.value = formState.note || '';
+      if (deliveryTypeEl.value === 'delivery') addressRow.style.display='block';
+    }
+
+    // phone input: allow only digits
+    phoneEl.addEventListener('input', ()=>{ phoneEl.value = phoneEl.value.replace(/\D/g,'').slice(0,9); saveForm(); });
+    nameEl.addEventListener('input', ()=>{ nameEl.value = nameEl.value.replace(/[^\p{L}\s]/gu,''); saveForm(); });
+
+    // initial render
+    renderMenu(); renderCart(); updateFormState();
+
+    // About / Contacts
+    document.getElementById('aboutBtn').addEventListener('click', ()=>{
+      showModal('О нас','Fast&Nice — лучший фастфуд в городе. Открыты 10:00 - 23:00');
+    });
+    document.getElementById('contactsBtn').addEventListener('click', ()=>{
+      showModal('Контакты','Тел: +992 900 000000\nАдрес: Примерная улица, 1');
+    });
+
+    // keyboard accessibility: prevent yellow outline on click (some browsers)
+    document.addEventListener('mousedown', function(){ document.body.style.outline = 'none'; });
+
+  </script>
+</body>
+</html>
